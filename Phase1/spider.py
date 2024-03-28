@@ -45,70 +45,70 @@ class parent_child_link():
         return parents
 
 
-class Spider():
-    def __init__(self, starting_url) -> None:
-        self.starting_url = starting_url
-        self.link = parent_child_link()
+# class Spider():
+#     def __init__(self, starting_url) -> None:
+#         self.starting_url = starting_url
+#         self.link = parent_child_link()
 
-    def run(self, num_pages):
-        queue = [self.starting_url]  # Queue to store URLs to be processed
-        visited = []  # Set to keep track of visited URLs
-        num_processed = 0  # Counter for the number of processed pages
+#     def run(self, num_pages):
+#         queue = [self.starting_url]  # Queue to store URLs to be processed
+#         visited = []  # Set to keep track of visited URLs
+#         num_processed = 0  # Counter for the number of processed pages
 
-        while queue and num_processed < num_pages:
-            url = queue.pop(0)  # Get the next URL from the queue
-            if url not in visited:
-                visited.append(url)
-                try:
-                    response = rq.get(url)  # Fetch the page
-                    if response.status_code == 200:
-                        page_content = response.text  # Extract the HTML content
+#         while queue and num_processed < num_pages:
+#             url = queue.pop(0)  # Get the next URL from the queue
+#             if url not in visited:
+#                 visited.append(url)
+#                 try:
+#                     response = rq.get(url)  # Fetch the page
+#                     if response.status_code == 200:
+#                         page_content = response.text  # Extract the HTML content
 
-                        # print(page_content)
+#                         # print(page_content)
 
-                        # Parse the HTML using BeautifulSoup
-                        soup = BeautifulSoup(page_content, 'lxml')
+#                         # Parse the HTML using BeautifulSoup
+#                         soup = BeautifulSoup(page_content, 'lxml')
                         
-                        # Extract all hyperlinks from the page
-                        links = soup.find_all('a')
+#                         # Extract all hyperlinks from the page
+#                         links = soup.find_all('a')
 
-                        # Remove the file extension from the URL
-                        dot_index = url.rfind('/')
-                        if dot_index != -1:
-                            base_url = url[:dot_index]
+#                         # Remove the file extension from the URL
+#                         dot_index = url.rfind('/')
+#                         if dot_index != -1:
+#                             base_url = url[:dot_index]
 
-                        for link in links:
-                            child_url = link.get('href')
+#                         for link in links:
+#                             child_url = link.get('href')
                             
-                            child_url = base_url+ "/" +child_url
+#                             child_url = base_url+ "/" +child_url
 
-                            # Process the child URL (perform checks, add to queue, etc.)
-                            if child_url not in visited:
-                                # limit the number
-                                if len(queue) < num_pages:
-                                    queue.append(child_url)
-                                    # add child url without check
-                                    self.link.add_link(visited.index(url), url, child_url)
-                                    # print(f"pid: {visited.index(url)} parent: {url} add: {child_url}")
+#                             # Process the child URL (perform checks, add to queue, etc.)
+#                             if child_url not in visited:
+#                                 # limit the number
+#                                 if len(queue) < num_pages:
+#                                     queue.append(child_url)
+#                                     # add child url without check
+#                                     self.link.add_link(visited.index(url), url, child_url)
+#                                     # print(f"pid: {visited.index(url)} parent: {url} add: {child_url}")
                                 
-                            # Increment the counter for processed pages
-                            num_processed += 1
-                    else:
-                        print(f"Failed to fetch page: {url}")
-                except rq.exceptions.RequestException as e:
-                    print(f"Error fetching page: {url}")
-            else:
-                print(f"URL already visited: {url}")
+#                             # Increment the counter for processed pages
+#                             num_processed += 1
+#                     else:
+#                         print(f"Failed to fetch page: {url}")
+#                 except rq.exceptions.RequestException as e:
+#                     print(f"Error fetching page: {url}")
+#             else:
+#                 print(f"URL already visited: {url}")
         
-        print(len(queue))
+#         print(len(queue))
 
 
-if __name__ == "__main__":
-    # fetch the url
-    test_url = "https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm"
-    num_of_pages = 30
+# if __name__ == "__main__":
+#     # fetch the url
+#     test_url = "https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm"
+#     num_of_pages = 30
 
-    spider = Spider(test_url)
-    spider.run(num_of_pages)
+#     spider = Spider(test_url)
+#     spider.run(num_of_pages)
 
-    print(spider.link)
+#     print(spider.link)
