@@ -20,29 +20,42 @@ class Spider():
     def create_tables(self):
         # Create tables for documents and terms if they don't exist
         self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS documents (
+            CREATE TABLE IF NOT EXISTS Pages (
                 id INTEGER PRIMARY KEY,
                 title TEXT,
                 url TEXT,
-                content TEXT
+                last_modification_date TEXT,
+                page_size INTEGER,
+                child_link_list TEXT
             )
         ''')
 
         self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS terms (
+            CREATE TABLE IF NOT EXISTS Keywords (
                 id INTEGER PRIMARY KEY,
-                term TEXT UNIQUE
+                keyword TEXT UNIQUE
             )
         ''')
 
         self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS document_terms (
-                document_id INTEGER,
-                term_id INTEGER,
-                FOREIGN KEY (document_id) REFERENCES documents(id),
-                FOREIGN KEY (term_id) REFERENCES terms(id)
+            CREATE TABLE IF NOT EXISTS Indexer (
+                page_id INTEGER,
+                keyword_id INTEGER,
+                frequency INTEGER,
+                FOREIGN KEY (page_id) REFERENCES Pages(id),
+                FOREIGN KEY (keyword_id) REFERENCES Keywords(id)
             )
         ''')
+
+        # not necessary
+        # self.cursor.execute('''
+        #     CREATE TABLE IF NOT EXISTS ChildLinks (
+        #         page_id INTEGER,
+        #         keyword_id INTEGER,
+        #         FOREIGN KEY (page_id) REFERENCES Pages(id),
+        #         FOREIGN KEY (keyword_id) REFERENCES Keywords(id)
+        #     )
+        # ''')
 
     def load_stopwords(self):
         stopwords = set()
@@ -75,13 +88,23 @@ class Spider():
             term_id = self.cursor.fetchone()[0]
             term_ids.append(term_id)
 
-        # Insert associations between document and terms into the document_terms table
+        # Insert associations between document and terms into the indexer table
         for term_id in term_ids:
-            self.cursor.execute('INSERT INTO document_terms (document_id, term_id) VALUES (?, ?)',
+            self.cursor.execute('INSERT INTO indexer (document_id, term_id) VALUES (?, ?)',
                                 (document_id, term_id))
 
         # Commit the changes to the database
         self.conn.commit()
+
+    def extract_content(self, soup):
+        # extract content from the soup object
+        content = ""
+        paragraphs = soup.find_all("body")
+        for paragraph in paragraphs:
+            if paragraph.get_text() == "br":
+                continue
+            content += paragraph.get_text() + " "
+        return content
 
     def run(self, num_pages):
         queue = [self.starting_url]  # Queue to store URLs to be processed
@@ -97,11 +120,23 @@ class Spider():
                     if response.status_code == 200:
                         page_content = response.text  # Extract the HTML content
 
+                        # get header of url
+                        header = rq.head(url).headers
+
                         # Parse the HTML using BeautifulSoup
                         soup = BeautifulSoup(page_content, 'lxml')
 
-                        # Extract the necessary information from the page (title, content, etc.)
+                        # Extract the necessary information from the page
+                        # title
                         title = soup.title.string if soup.title else ""
+
+                        # last modification date
+                        last_modification_date = header.get('Last-Modified', -1)
+                        
+                        # size of page
+                        page_size = header.get('content-length', -1)
+
+                        # 
                         content = self.extract_content(soup)  # Replace with your own function to extract content
 
                         # Create a document dictionary
@@ -139,15 +174,6 @@ class Spider():
 
         self.conn.close()  # Close the database connection
         print(f"Length of queue: {len(queue)}")
-
-    def extract_content(self, soup):
-        # Replace this function with your own logic to extract content from the soup object
-        # For example, you can retrieve the text from paragraphs or specific HTML elements
-        content = ""
-        paragraphs = soup.find_all("p")
-        for paragraph in paragraphs:
-            content += paragraph.get_text() + " "
-        return content
 
 if __name__ == "__main__":
     # fetch the urls
