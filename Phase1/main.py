@@ -157,10 +157,10 @@ class Spider():
                                     queue.append(child_url)
                                     self.link.add_link(visited.index(url), url, child_url)
 
-                            # Increment the counter for processed pages
-                            num_processed += 1
+                        # Increment the counter for processed pages
+                        num_processed += 1
 
-                        print(f"Current Page: {title} \nCurrent Queue: {queue} \n Current Visited: {visited}\n")
+                        # print(f"Current Page: {title} num_process: {num_processed} \nCurrent Queue: {queue} \n Current Visited: {visited}\n")
                         # Create a document dictionary
                         page = {
                             'title': title,
@@ -181,7 +181,7 @@ class Spider():
                 print(f"URL already visited: {url}")
 
         self.conn.close()  # Close the database connection
-        print(f"Length of queue: {len(queue)}")
+        # print(f"Length of queue: {len(queue)}")
 
 if __name__ == "__main__":
     # fetch the urls
