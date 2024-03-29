@@ -18,7 +18,7 @@ class Spider():
         self.stemmer = PorterStemmer()  # Create stemmer
 
     def create_tables(self):
-        # Create tables for documents and terms if they don't exist
+        # Create tables for documents and keywords if they don't exist
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Pages (
                 id INTEGER PRIMARY KEY,
@@ -47,16 +47,6 @@ class Spider():
             )
         ''')
 
-        # not necessary
-        # self.cursor.execute('''
-        #     CREATE TABLE IF NOT EXISTS ChildLinks (
-        #         page_id INTEGER,
-        #         keyword_id INTEGER,
-        #         FOREIGN KEY (page_id) REFERENCES Pages(id),
-        #         FOREIGN KEY (keyword_id) REFERENCES Keywords(id)
-        #     )
-        # ''')
-
     def load_stopwords(self):
         stopwords = set()
         with open("stopwords.txt", "r") as file:
@@ -67,34 +57,11 @@ class Spider():
     def stem_word(self, word):
         return self.stemmer.stem(word)
 
-    def extract_terms(self, text):
-        # Extract terms from the text and apply stemming and stopword removal
-        terms = re.findall(r'\b\w+\b', text.lower())
-        terms = [self.stem_word(term) for term in terms if term not in self.stopwords]
-        return terms
-
-    def insert_document(self, document):
-        # Insert the document into the documents table
-        self.cursor.execute('INSERT INTO documents (title, url, content) VALUES (?, ?, ?)',
-                            (document['title'], document['url'], document['content']))
-        document_id = self.cursor.lastrowid
-
-        # Extract terms from the document content and insert them into the terms table
-        terms = self.extract_terms(document['content'])
-        term_ids = []
-        for term in terms:
-            self.cursor.execute('INSERT OR IGNORE INTO terms (term) VALUES (?)', (term,))
-            self.cursor.execute('SELECT id FROM terms WHERE term = ?', (term,))
-            term_id = self.cursor.fetchone()[0]
-            term_ids.append(term_id)
-
-        # Insert associations between document and terms into the indexer table
-        for term_id in term_ids:
-            self.cursor.execute('INSERT INTO indexer (document_id, term_id) VALUES (?, ?)',
-                                (document_id, term_id))
-
-        # Commit the changes to the database
-        self.conn.commit()
+    def extract_keywords(self, text):
+        # Extract keywords from the text and apply stemming and stopword removal
+        keywords = re.findall(r'\b\w+\b', text.lower())
+        keywords = [self.stem_word(keyword) for keyword in keywords if keyword not in self.stopwords]
+        return keywords
 
     def extract_content(self, soup):
         # extract content from the soup object
@@ -105,6 +72,40 @@ class Spider():
                 continue
             content += paragraph.get_text() + " "
         return content
+    
+    def form_child_link_list(self, links):
+        output = "\n"
+        for link in links:
+            output += link
+            output += "\n"
+        return output
+
+    def insert_page(self, page):
+        # Insert the page into the Pages table
+        self.cursor.execute('INSERT INTO Pages (title, url, last_modification_date, page_size, child_link_list) VALUES (?, ?, ?, ?, ?)',
+                            (page['title'], page['url'], page['modification_date'], page['page_size'], self.form_child_link_list(page['child_links'])))
+        page_id = self.cursor.lastrowid
+
+        # Extract keywords from the page content and insert them into the keywords table
+        keywords = self.extract_keywords(page['content'])
+        keyword_dict = {}
+        for keyword in keywords:
+            self.cursor.execute('INSERT OR IGNORE INTO Keywords (keyword) VALUES (?)', (keyword,))
+            self.cursor.execute('SELECT id FROM keywords WHERE keyword = ?', (keyword,))
+            keyword_id = self.cursor.fetchone()[0]
+            if keyword_id in keyword_dict.keys():
+                keyword_dict[keyword_id] += 1
+            else:
+                keyword_dict[keyword_id] = 1
+        # print(f"keyword dict: {keyword_dict}")
+                
+        # Insert associations between page and keywords into the indexer table
+        for keyword_id, freq in keyword_dict.items():
+            self.cursor.execute('INSERT INTO indexer (page_id, keyword_id, frequency) VALUES (?, ?, ?)',
+                                (page_id, keyword_id, freq))
+
+        # Commit the changes to the database
+        self.conn.commit()
 
     def run(self, num_pages):
         queue = [self.starting_url]  # Queue to store URLs to be processed
@@ -126,35 +127,27 @@ class Spider():
                         # Parse the HTML using BeautifulSoup
                         soup = BeautifulSoup(page_content, 'lxml')
 
-                        # Extract the necessary information from the page
+                        ### Extract the necessary information from the page
                         # title
                         title = soup.title.string if soup.title else ""
-
+                        
                         # last modification date
                         last_modification_date = header.get('Last-Modified', -1)
                         
                         # size of page
                         page_size = header.get('content-length', -1)
 
-                        # 
+                        # page content
                         content = self.extract_content(soup)  # Replace with your own function to extract content
-
-                        # Create a document dictionary
-                        document = {
-                            'title': title,
-                            'url': url,
-                            'content': content
-                        }
-
-                        # Insert the document into the index
-                        self.insert_document(document)
 
                         # Extract all hyperlinks from the page
                         links = soup.find_all('a')
-
-                        for link in links:
+                        for idx, link in enumerate(links):
                             child_url = link.get('href')
                             child_url = urljoin(url, child_url)  # Resolve the child URL
+
+                            # change the links content to complete link
+                            links[idx] = child_url
 
                             # Process the child URL (perform checks, add to queue, etc.)
                             if child_url not in visited:
@@ -165,6 +158,19 @@ class Spider():
 
                             # Increment the counter for processed pages
                             num_processed += 1
+
+                        # Create a document dictionary
+                        page = {
+                            'title': title,
+                            'url': url,
+                            'modification_date': last_modification_date,
+                            'page_size': page_size,
+                            'child_links': links,
+                            'content': content
+                        }
+
+                        # Insert the document into the index
+                        self.insert_page(page)
                     else:
                         print(f"Failed to fetch page: {url}")
                 except rq.exceptions.RequestException as e:
