@@ -1,0 +1,48 @@
+Test page
+https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm
+Tue, 16 May 2023 05:03:16 GMT, 603
+test 1; page 1; crawler 1; get 1; admiss 1; cse 1; depart 1; hkust 1; read 1; intern 1;
+https://www.cse.ust.hk/~kwtleung/COMP4321/ust_cse.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/news.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/books.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie.htm
+----
+CSE department of HKUST
+https://www.cse.ust.hk/~kwtleung/COMP4321/ust_cse.htm
+Tue, 16 May 2023 05:03:16 GMT, 392
+admiss 2; cse 1; depart 1; hkust 1; pg 1; ug 1; main 1;
+https://www.cse.ust.hk/~kwtleung/COMP4321/ust_cse/PG.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/ust_cse/UG.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm
+----
+News
+https://www.cse.ust.hk/~kwtleung/COMP4321/news.htm
+Tue, 16 May 2023 05:03:16 GMT, 384
+news 3; bbc 1; cnn 1; main 1;
+https://www.cse.ust.hk/~kwtleung/COMP4321/news/bbc.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/news/cnn.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm
+----
+books
+https://www.cse.ust.hk/~kwtleung/COMP4321/books.htm
+Tue, 16 May 2023 05:03:16 GMT, 601
+book 1; articl 1; read 1; autom 1; keyword 1; classif 1; inform 1; retriev 1; gener 1; machin 1;
+https://www.cse.ust.hk/~kwtleung/COMP4321/books/book1.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/books/book2.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/books/book3.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm
+----
+Movie Index Page
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie.htm
+Tue, 16 May 2023 05:09:22 GMT, 19541
+2004 33; 2002 26; 2003 24; 2000 24; 2001 19; 2 13; 1996 12; season 12; 1997 10; 1999 10;
+https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/1.html
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/2.html
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/3.html
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/4.html
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/5.html
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/6.html
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/7.html
+https://www.cse.ust.hk/~kwtleung/COMP4321/Movie/8.html
+----

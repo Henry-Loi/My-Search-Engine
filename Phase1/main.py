@@ -141,16 +141,17 @@ class Spider():
                         content = self.extract_content(soup)  # Replace with your own function to extract content
 
                         # Extract all hyperlinks from the page
+                        child_links = []
                         links = soup.find_all('a')
-                        for idx, link in enumerate(links):
+                        for link in links:
                             child_url = link.get('href')
                             child_url = urljoin(url, child_url)  # Resolve the child URL
 
                             # change the links content to complete link
-                            links[idx] = child_url
+                            child_links.append(child_url)
 
                             # Process the child URL (perform checks, add to queue, etc.)
-                            if child_url not in visited:
+                            if child_url not in visited and child_url not in queue:                                
                                 # limit the number
                                 if len(queue) < num_pages:
                                     queue.append(child_url)
@@ -159,13 +160,14 @@ class Spider():
                             # Increment the counter for processed pages
                             num_processed += 1
 
+                        print(f"Current Page: {title} \nCurrent Queue: {queue} \n Current Visited: {visited}\n")
                         # Create a document dictionary
                         page = {
                             'title': title,
                             'url': url,
                             'modification_date': last_modification_date,
                             'page_size': page_size,
-                            'child_links': links,
+                            'child_links': child_links,
                             'content': content
                         }
 
@@ -189,4 +191,4 @@ if __name__ == "__main__":
     spider = Spider(test_url_1)
     spider.run(num_of_pages)
 
-    print(spider.link)
+    # print(spider.link)
