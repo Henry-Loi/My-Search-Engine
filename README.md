@@ -7,3 +7,12 @@ Follow the steps below:
 cd ./SearchEngine
 python manage.py runserver
 ```
+
+### Super User Information
+Add `/admin` after the root url to get into the admin system
+
+```
+Username: Admin
+Password: admin
+E-mail: admin@admin.com
+```
