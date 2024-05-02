@@ -8,7 +8,7 @@
     <button type="submit">Search</button>
 </form>
 
-{% if results %}
+{% if results != "Not Found" %}
 <h2>Search Results:</h2>
 {% for result in results %}
 <div class="result-item">
@@ -21,6 +21,8 @@
     <p>Child links: {% for child_link in result.child_links %}{{ child_link }}; {% endfor %}</p>
 </div>
 {% endfor %}
+{% else %}
+<p>No results found.</p>
 {% endif %}
 
 {% endblock %}

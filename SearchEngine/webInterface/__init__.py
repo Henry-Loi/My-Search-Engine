@@ -1,0 +1,1 @@
+from SearchEngine.webInterface.spider import load_initial_data
