@@ -4,10 +4,9 @@ from urllib.parse import urljoin, urlparse
 import sqlite3
 from nltk.stem import PorterStemmer
 import re
+from datetime import datetime
 
-import parent_child_link
-
-from .models import Pages, Keywords, Indexer
+from .parent_child_link import *
 
 class Spider():
     def __init__(self, starting_url) -> None:
@@ -49,34 +48,63 @@ class Spider():
             output += "\n"
         return output
 
-    def insert_page(self, page):
+    def insert_page(self, page, apps):
+        Pages = apps.get_model('webInterface', 'Pages')
+
         # Insert the page into the Pages table
-        self.cursor.execute('INSERT INTO Pages (title, url, last_modification_date, page_size, child_link_list) VALUES (?, ?, ?, ?, ?)',
-                            (page['title'], page['url'], page['modification_date'], page['page_size'], self.form_child_link_list(page['child_links'])))
-        page_id = self.cursor.lastrowid
+        page_instance = Pages.objects.create(
+            title=page['title'],
+            url=page['url'],
+            last_modification_date=datetime.strptime(page['modification_date'], '%a, %d %b %Y %H:%M:%S %Z') if page['modification_date'] != -1 else None,
+            page_size=page['page_size'],
+            child_link_list=self.form_child_link_list(page['child_links'])
+        )
+
+        Keywords = apps.get_model('webInterface', 'Keywords')
 
         # Extract keywords from the page content and insert them into the keywords table
         keywords = self.extract_keywords(page['content'])
         keyword_dict = {}
         for keyword in keywords:
-            self.cursor.execute('INSERT OR IGNORE INTO Keywords (keyword) VALUES (?)', (keyword,))
-            self.cursor.execute('SELECT id FROM keywords WHERE keyword = ?', (keyword,))
-            keyword_id = self.cursor.fetchone()[0]
+            keyword_instance, created = Keywords.objects.get_or_create(keyword=keyword)
+            keyword_id = keyword_instance.id
             if keyword_id in keyword_dict.keys():
                 keyword_dict[keyword_id] += 1
             else:
                 keyword_dict[keyword_id] = 1
-        # print(f"keyword dict: {keyword_dict}")
-                
+
+        Indexer = apps.get_model('webInterface', 'Indexer')
+
         # Insert associations between page and keywords into the indexer table
         for keyword_id, freq in keyword_dict.items():
-            self.cursor.execute('INSERT INTO indexer (page_id, keyword_id, frequency) VALUES (?, ?, ?)',
-                                (page_id, keyword_id, freq))
+            Indexer.objects.create(
+                page_id=page_instance,
+                keyword_id=Keywords.objects.get(id=keyword_id),
+                frequency=freq,
+                is_title=False
+            )
 
-        # Commit the changes to the database
-        self.conn.commit()
+        # Extract keywords from the title and insert them into the keywords table
+        title_keywords = self.extract_keywords(page['title'])
+        title_keyword_dict = {}
+        for keyword in title_keywords:
+            keyword_instance, created = Keywords.objects.get_or_create(keyword=keyword)
+            keyword_id = keyword_instance.id
+            if keyword_id in title_keyword_dict.keys():
+                title_keyword_dict[keyword_id] += 1
+            else:
+                title_keyword_dict[keyword_id] = 1
+        
+        # Insert associations between page and keywords into the indexer table
+        for keyword_id, freq in title_keyword_dict.items():
+            Indexer.objects.create(
+                page_id=page_instance,
+                keyword_id=Keywords.objects.get(id=keyword_id),
+                frequency=freq,
+                is_title=True
+            )
 
-    def run(self, num_pages):
+    def run(self, num_pages, apps):
         queue = [self.starting_url]  # Queue to store URLs to be processed
         visited = []  # Set to keep track of visited URLs
         num_processed = 0  # Counter for the number of processed pages
@@ -141,7 +169,7 @@ class Spider():
                         }
 
                         # Insert the document into the index
-                        self.insert_page(page)
+                        self.insert_page(page, apps)
                     else:
                         print(f"Failed to fetch page: {url}")
                 except rq.exceptions.RequestException as e:
@@ -149,13 +177,13 @@ class Spider():
             else:
                 print(f"URL already visited: {url}")
 
-        self.conn.close()  # Close the database connection
+        # self.conn.close()  # Close the database connection
         # print(f"Length of queue: {len(queue)}")
 
-if __name__ == "__main__":
+def load_initial_data(apps, schema_editor):
     # fetch the urls
     test_url_1 = "https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm"
     num_of_pages = 30
 
     spider = Spider(test_url_1)
-    spider.run(num_of_pages)
+    spider.run(num_of_pages, apps)
