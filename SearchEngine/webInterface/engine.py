@@ -26,7 +26,7 @@ class SearchEngine:
     def rank_documents(self, query):
         cosine_similarities = self.calculate_cosine_similarity(query)
         indices = np.argsort(cosine_similarities)[::-1]
-        ranked_pages = [(self.pages[i], cosine_similarities[i]) for i in indices]
+        ranked_pages = [(self.pages[int(i)], cosine_similarities[i]) for i in indices]
         return ranked_pages[:50]
 
     def search(self, query):
@@ -40,7 +40,7 @@ class SearchEngine:
                 'url': page.url,
                 'last_modification_date': page.last_modification_date,
                 'page_size': page.page_size,
-                'keywords': [index.keyword_id.keyword for index in self.indexer if index.page_id == page],
+                'keywords': [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page],
                 'parent_links': "None",
                 'child_links': child_link_list,
                 'score': score
