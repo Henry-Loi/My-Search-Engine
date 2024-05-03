@@ -1,10 +1,14 @@
 from django.shortcuts import render
+from .models import Pages, Indexer, Keywords
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 import numpy as np
-from .models import Pages, Indexer, Keywords
+
+### TODO:
+# 1. Implement stemming
+# 2. Implement stop words removal
 
 class SearchEngine:
     def __init__(self, pages, indexer):
