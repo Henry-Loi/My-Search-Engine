@@ -35,11 +35,27 @@ body {
   
   /* Search results styles */
   .result-item {
+    display: flex; /* Use flexbox layout */
     margin-bottom: 20px;
     padding: 10px;
     background-color: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
+  }
+
+  .score{
+    width: 50%;
+    background-color: #4caf50;
+    color: #fff; /* Make the text white */
+    font-weight: bold; /* Make the text bold */
+    justify-content: center; /* Center the text horizontally */
+    align-items: center; /* Center the text vertically */
+    text-align: center; /* Center the text if it wraps to more than one line */
+  }
+
+  .content {
+    flex-grow: 1; /* Allow the content section to grow and fill remaining space */
+    background-color: lightgray; /* Example background color */
   }
   
   .result-item h3 {

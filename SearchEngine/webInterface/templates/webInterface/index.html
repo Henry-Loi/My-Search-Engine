@@ -12,13 +12,16 @@
 <h2>Search Results:</h2>
 {% for result in results %}
 <div class="result-item">
-    <h3>{{ result.score }} {{ result.page_title }}</h3>
-    <p><a href="{{ result.url }}">{{ result.url }}</a></p>
-    <p>Last modified: {{ result.last_modified_date }}</p>
-    <p>Size of page: {{ result.page_size }}</p>
-    <p>Keywords: {% for keyword, frequency in result.keywords %}{{ keyword }} ({{ frequency }}); {% endfor %}</p>
-    <p>Parent links: {% for parent_link in result.parent_links %}{{ parent_link }}; {% endfor %}</p>
-    <p>Child links: {% for child_link in result.child_links %}{{ child_link }}; {% endfor %}</p>
+    <div class="score">{{ result.score }}</div>
+    <div class="content">
+        <h3>{{ result.page_title }}</h3>
+        <p><a href="{{ result.url }}">{{ result.url }}</a></p>
+        <p>Last modified: {{ result.last_modified_date }}</p>
+        <p>Size of page: {{ result.page_size }}</p>
+        <p>Keywords: {% for keyword, frequency in result.keywords %}{{ keyword }} ({{ frequency }}); {% endfor %}</p>
+        <p>Parent links: {% for parent_link in result.parent_links %}{{ parent_link }}; {% endfor %}</p>
+        <p>Child links: {% for child_link in result.child_links %}{{ child_link }}; {% endfor %}</p>
+    </div>
 </div>
 {% endfor %}
 {% else %}
