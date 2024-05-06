@@ -42,7 +42,7 @@ class Spider():
         return content
     
     def form_child_link_list(self, links):
-        output = "\n"
+        output = ""
         for link in links:
             output += link
             output += "\n"
@@ -182,8 +182,8 @@ class Spider():
 
 def load_initial_data(apps, schema_editor):
     # fetch the urls
-    test_url_1 = "https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm"
-    num_of_pages = 30
+    test_url = "https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm"
+    num_of_pages = 300
 
-    spider = Spider(test_url_1)
+    spider = Spider(test_url)
     spider.run(num_of_pages, apps)
