@@ -67,17 +67,21 @@ class SearchEngine:
 
         for page, score in ranked_pages:
             # extract child links from the child_link_list
-            child_link_list = page.child_link_list.split(" ") if page.child_link_list else []
+            child_link_list = page.child_link_list.split("\n") if page.child_link_list else []
 
             # extract parent links
-            parent_link_list = self.pages.filter(child_link_list__contains=page.url)
+            parent_link_list = self.pages.filter(child_link_list__contains=page.url).values_list('url', flat=True)
+
+            # extract keywords
+            keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
+            keyword_list = sorted(keyword_list, key=lambda x: x[1], reverse=True)[:5]
 
             output = {
                 'page_title': page.title,
                 'url': page.url,
-                'last_modification_date': page.last_modification_date,
+                'last_modification_date': page.last_modification_date.strftime('%Y-%m-%d %H:%M:%S') if page.last_modification_date else None,
                 'page_size': page.page_size,
-                'keywords': [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page],
+                'keywords': keyword_list,
                 'parent_links': parent_link_list,
                 'child_links': child_link_list,
                 'score': score
