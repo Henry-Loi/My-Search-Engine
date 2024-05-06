@@ -18,7 +18,7 @@
     <p>Size of page: {{ result.page_size }}</p>
     <p>Keywords: {% for keyword, frequency in result.keywords %}{{ keyword }} ({{ frequency }}); {% endfor %}</p>
     <p>Parent links: {% for parent_link in result.parent_links %}{{ parent_link }}; {% endfor %}</p>
-    <p>Child links: {% for child_link in result.child_links %}{{ child_link }}; {% endfor %}</p>
+    <p>Child links: {% for child_link in result.child_links %}{{ child_link }} {% endfor %}</p>
 </div>
 {% endfor %}
 {% else %}
