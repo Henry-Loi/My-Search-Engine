@@ -185,5 +185,13 @@ def load_initial_data(apps, schema_editor):
     test_url = "https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm"
     num_of_pages = 300
 
+    # clear the database
+    Pages = apps.get_model('webInterface', 'Pages')
+    Keywords = apps.get_model('webInterface', 'Keywords')
+    Indexer = apps.get_model('webInterface', 'Indexer')
+    Pages.objects.all().delete()
+    Keywords.objects.all().delete()
+    Indexer.objects.all().delete()
+
     spider = Spider(test_url)
     spider.run(num_of_pages, apps)
