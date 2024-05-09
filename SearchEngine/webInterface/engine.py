@@ -6,10 +6,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 import numpy as np
 from nltk.stem import PorterStemmer
+import os
+import pickle
 
 ### TODO:
 # 1. Better title weighting setting
-# 2. Last modification date display bug
 
 class Singleton(type):
     _instances = {}
@@ -19,14 +20,28 @@ class Singleton(type):
         return cls._instances[cls]
 
 class SearchEngine(metaclass=Singleton):
-    def __init__(self, pages, indexer):
+    def __init__(self, pages, indexer, keywords):
         # table objects
         self.pages = pages
         self.indexer = indexer
+        self.keywords = keywords
+
+        # The file to save/load the TF-IDF matrix
+        vectorizer_file = 'vectorizer.pickle'
 
         # for tf-idf calculation
-        self.vectorizer = TfidfVectorizer(ngram_range=(1, 3))
+        if os.path.exists(vectorizer_file):
+            print("Loading vectorizer...")
+            self.vectorizer = pickle.load(open(vectorizer_file, 'rb'))
+            print("Vectorizer loaded.")
+        else:
+            self.vectorizer = TfidfVectorizer(ngram_range=(1, 3))
+        
         self.tfidf_matrix = self.calculate_tfidf()
+        print(f"TF-IDF Matrix: {self.tfidf_matrix.dtype} {self.tfidf_matrix.shape}")
+
+        if not os.path.exists(vectorizer_file):
+            pickle.dump(self.vectorizer, open(vectorizer_file, 'wb'))
 
         # for query preprocessing
         self.stemmer = PorterStemmer()
@@ -54,8 +69,24 @@ class SearchEngine(metaclass=Singleton):
 
             docs.append(keywords)
         return docs
-
+    
     def calculate_tfidf(self):
+        tfidf_file = 'tfidf_matrix.npy'
+
+        # tfidf_matrix = np.zeros((len(self.pages), len(self.indexer)))
+
+        if os.path.exists(tfidf_file):
+            print("Loading TF-IDF matrix...")
+            self.tfidf_matrix = np.load(tfidf_file, allow_pickle=True)
+            print("TF-IDF matrix loaded.")
+        else:
+            self.tfidf_matrix = self._calculate_tfidf()  # Assume this method calculates the TF-IDF matrix
+            np.save(tfidf_file, self.tfidf_matrix.toarray())
+            print(f"TF-IDF Matrix: {self.tfidf_matrix.toarray().dtype} {self.tfidf_matrix.toarray().shape}")
+
+        return self.tfidf_matrix
+
+    def _calculate_tfidf(self):
         # Select keywords from the indexer for each page
         docs = self.__get_docs()
 
@@ -65,14 +96,18 @@ class SearchEngine(metaclass=Singleton):
 
     def calculate_cosine_similarity(self, query):
         query_vector = self.vectorizer.transform([query])
-        # print(f"Query Vector: {query_vector}")
+        print(f"Query Vector: {query_vector.shape} {query_vector.dtype}")
+        print("Calculating cosine similarity...")
         cosine_similarities = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
+        print(f"Cosine Similarities calculated.")
         return cosine_similarities
 
     def rank_documents(self, query):
         cosine_similarities = self.calculate_cosine_similarity(query)
+        print("Ranking documents...")
         indices = np.argsort(cosine_similarities)[::-1]
         ranked_pages = [(self.pages[int(i)], cosine_similarities[i]) for i in indices]
+        print("Documents ranked.")
         return ranked_pages[:50] # max 50 results
     
     def query_preprocessing(self, query):
@@ -111,7 +146,7 @@ class SearchEngine(metaclass=Singleton):
             keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
             keyword_list = sorted(keyword_list, key=lambda x: x[1], reverse=True)[:5]
 
-            print(f"last_modification_date: {page.last_modification_date}")
+            # print(f"last_modification_date: {page.last_modification_date}")
             output = {
                 'page_title': page.title,
                 'url': page.url,
@@ -130,9 +165,10 @@ def get_search_results(query):
     # Assuming you have a list of Page objects and Indexer objects
     pages = Pages.objects.all()
     indexer = Indexer.objects.all()
+    keywords = Keywords.objects.all()
 
     # Create an instance of SearchEngine
-    search_engine = SearchEngine(pages, indexer)
+    search_engine = SearchEngine(pages, indexer, keywords)
 
     results = search_engine.search(query)
 
