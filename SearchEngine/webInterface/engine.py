@@ -42,14 +42,15 @@ class SearchEngine(metaclass=Singleton):
     def __get_docs(self):
         docs = []
         for page in self.pages:
-            keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
+            # extract keywords from the indexer
+            content_keywords = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page and not index.is_title]
+            
+            # add title keywords with higher weight by checking index.is_title
+            title_keywords = [(index.keyword_id.keyword, index.frequency * 5) for index in self.indexer if index.page_id == page and index.is_title]
+            
+            keyword_list = content_keywords + title_keywords
             keyword_list = sorted(keyword_list, key=lambda x: x[1], reverse=True)
             keywords = " ".join([keyword for keyword, _ in keyword_list])
-
-            # Add title keywords with higher weight
-            title_keywords = page.title.split()
-            for keyword in title_keywords:
-                keywords += " " + keyword * 3  # repeat title keywords 3 times
 
             docs.append(keywords)
         return docs
@@ -75,7 +76,6 @@ class SearchEngine(metaclass=Singleton):
         return ranked_pages[:50] # max 50 results
     
     def query_preprocessing(self, query):
-        # TODO: is case insensitive?
         query = query.lower()
         
         # Stemming
@@ -111,6 +111,7 @@ class SearchEngine(metaclass=Singleton):
             keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
             keyword_list = sorted(keyword_list, key=lambda x: x[1], reverse=True)[:5]
 
+            print(f"last_modification_date: {page.last_modification_date}")
             output = {
                 'page_title': page.title,
                 'url': page.url,

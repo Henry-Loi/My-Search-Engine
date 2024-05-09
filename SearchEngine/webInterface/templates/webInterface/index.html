@@ -16,7 +16,7 @@
     <p>{{ result.page_title }}</p>
 
     <p><a href="{{ result.url }}">{{ result.url }}</a></p>
-    <p>Last modified: {{ result.last_modified_date }}</p>
+    <p>Last modified: {{ result.last_modification_date }}</p>
     <p>Size of page: {{ result.page_size }}</p>
     <p>Keywords: {% for keyword, frequency in result.keywords %}{{ keyword }} ({{ frequency }}); {% endfor %}</p>
 

@@ -18,6 +18,9 @@ E-mail: admin@admin.com
 ```
 
 ### TODO
-- fix retrieval function
-- check last modification date display
-- update the database from 30 pages to 300 pages (change the update function and delete pass database)
+1. Better title weighting setting
+2. Last modification date display bug
+3. check score again
+
+### Reminder
+The first search takes more time as it need to calculate the tfidf
