@@ -8,16 +8,29 @@ import numpy as np
 from nltk.stem import PorterStemmer
 
 ### TODO:
-# 1. Implement stemming
-# 2. Implement stop words removal
+# 1. Better title weighting setting
+# 2. Last modification date display bug
 
-class SearchEngine:
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class SearchEngine(metaclass=Singleton):
     def __init__(self, pages, indexer):
+        # table objects
         self.pages = pages
         self.indexer = indexer
-        self.stopwords = self.load_stopwords()
-        self.vectorizer = TfidfVectorizer()
+
+        # for tf-idf calculation
+        self.vectorizer = TfidfVectorizer(ngram_range=(1, 3))
+        self.tfidf_matrix = self.calculate_tfidf()
+
+        # for query preprocessing
         self.stemmer = PorterStemmer()
+        self.stopwords = self.load_stopwords()
 
     def load_stopwords(self):
         stopwords = set()
@@ -26,22 +39,40 @@ class SearchEngine:
                 stopwords.add(line.strip())
         return stopwords
 
+    def __get_docs(self):
+        docs = []
+        for page in self.pages:
+            keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
+            keyword_list = sorted(keyword_list, key=lambda x: x[1], reverse=True)
+            keywords = " ".join([keyword for keyword, _ in keyword_list])
+
+            # Add title keywords with higher weight
+            title_keywords = page.title.split()
+            for keyword in title_keywords:
+                keywords += " " + keyword * 3  # repeat title keywords 3 times
+
+            docs.append(keywords)
+        return docs
+
     def calculate_tfidf(self):
-        docs = [page.title for page in self.pages]
+        # Select keywords from the indexer for each page
+        docs = self.__get_docs()
+
         tfidf_matrix = self.vectorizer.fit_transform(docs)
+        # print(f"TF-IDF Matrix: {tfidf_matrix}")
         return tfidf_matrix
 
     def calculate_cosine_similarity(self, query):
-        tfidf_matrix = self.calculate_tfidf()
         query_vector = self.vectorizer.transform([query])
-        cosine_similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
+        # print(f"Query Vector: {query_vector}")
+        cosine_similarities = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
         return cosine_similarities
 
     def rank_documents(self, query):
         cosine_similarities = self.calculate_cosine_similarity(query)
         indices = np.argsort(cosine_similarities)[::-1]
         ranked_pages = [(self.pages[int(i)], cosine_similarities[i]) for i in indices]
-        return ranked_pages[:50]
+        return ranked_pages[:50] # max 50 results
     
     def query_preprocessing(self, query):
         # TODO: is case insensitive?
@@ -49,6 +80,7 @@ class SearchEngine:
         
         # Stemming
         query = self.stemmer.stem(query)
+        print(f"Stemmed query: {query}")
         query = query.split(" ")
         
         # stopwords removal
@@ -66,6 +98,9 @@ class SearchEngine:
         outputs = []
 
         for page, score in ranked_pages:
+            if score == 0:
+                break
+
             # extract child links from the child_link_list
             child_link_list = page.child_link_list.split("\n") if page.child_link_list else []
 
