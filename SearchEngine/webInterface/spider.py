@@ -5,6 +5,7 @@ import sqlite3
 from nltk.stem import PorterStemmer
 import re
 from datetime import datetime
+import heapq
 
 from .parent_child_link import *
 
@@ -102,6 +103,19 @@ class Spider():
                 keyword_id=Keywords.objects.get(id=keyword_id),
                 frequency=freq,
                 is_title=True
+            )
+        
+        # insert TopKeywords
+        TopKeywords = apps.get_model('webInterface', 'TopKeywords')
+        keyword_list = [(index.keyword_id.keyword, index.frequency) for index in Indexer.objects.filter(page_id=page_instance)]
+        keyword_list = heapq.nlargest(5, keyword_list, key=lambda x: x[1])
+        for i, (keyword, freq) in enumerate(keyword_list):
+            keyword_instance = Keywords.objects.get(keyword=keyword)
+            TopKeywords.objects.create(
+                page_id=page_instance,
+                keyword_id=keyword_instance,
+                frequency=freq,
+                rank=i+1
             )
 
     def run(self, num_pages, apps):

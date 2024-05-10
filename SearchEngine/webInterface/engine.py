@@ -1,13 +1,16 @@
 from django.shortcuts import render
-from .models import Pages, Indexer, Keywords
+from .models import Pages, Indexer, Keywords, TopKeywords
+from django.db.models import Prefetch
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
 import pandas as pd
 import numpy as np
 from nltk.stem import PorterStemmer
 import os
 import pickle
+import heapq
 
 ### TODO:
 # 1. Better title weighting setting
@@ -38,7 +41,7 @@ class SearchEngine(metaclass=Singleton):
             self.vectorizer = TfidfVectorizer(ngram_range=(1, 3))
         
         self.tfidf_matrix = self.calculate_tfidf()
-        print(f"TF-IDF Matrix: {self.tfidf_matrix.dtype} {self.tfidf_matrix.shape}")
+        # print(f"TF-IDF Matrix: {self.tfidf_matrix.dtype} {self.tfidf_matrix.shape}")
 
         if not os.path.exists(vectorizer_file):
             pickle.dump(self.vectorizer, open(vectorizer_file, 'wb'))
@@ -82,7 +85,7 @@ class SearchEngine(metaclass=Singleton):
         else:
             self.tfidf_matrix = self._calculate_tfidf()  # Assume this method calculates the TF-IDF matrix
             np.save(tfidf_file, self.tfidf_matrix.toarray())
-            print(f"TF-IDF Matrix: {self.tfidf_matrix.toarray().dtype} {self.tfidf_matrix.toarray().shape}")
+            # print(f"TF-IDF Matrix: {self.tfidf_matrix.toarray().dtype} {self.tfidf_matrix.toarray().shape}")
 
         return self.tfidf_matrix
 
@@ -132,6 +135,13 @@ class SearchEngine(metaclass=Singleton):
         ranked_pages = self.rank_documents(query)
         outputs = []
 
+        # Prefetch related keywords
+        top_keywords_prefetch = Prefetch(
+            'topkeywords_set',
+            queryset=TopKeywords.objects.select_related('keyword_id').order_by('-frequency')[:5],
+            to_attr='top_keywords'
+        )
+
         for page, score in ranked_pages:
             if score == 0:
                 break
@@ -143,8 +153,11 @@ class SearchEngine(metaclass=Singleton):
             parent_link_list = self.pages.filter(child_link_list__contains=page.url).values_list('url', flat=True)
 
             # extract keywords
-            keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
-            keyword_list = sorted(keyword_list, key=lambda x: x[1], reverse=True)[:5]
+            # Get the page with prefetched top keywords
+            page = Pages.objects.prefetch_related(top_keywords_prefetch).get(id=page.id)
+
+            # Now you can access the top keywords without additional queries
+            top_keywords = [(kw.keyword_id.keyword, kw.frequency) for kw in page.top_keywords]
 
             # print(f"last_modification_date: {page.last_modification_date}")
             output = {
@@ -152,7 +165,7 @@ class SearchEngine(metaclass=Singleton):
                 'url': page.url,
                 'last_modification_date': page.last_modification_date.strftime('%Y-%m-%d %H:%M:%S') if page.last_modification_date else None,
                 'page_size': page.page_size,
-                'keywords': keyword_list,
+                'keywords': top_keywords,
                 'parent_links': parent_link_list,
                 'child_links': child_link_list,
                 'score': score
