@@ -8,6 +8,7 @@ import numpy as np
 from nltk.stem import PorterStemmer
 import os
 import pickle
+import heapq
 
 ### TODO:
 # 1. Better title weighting setting
@@ -132,19 +133,29 @@ class SearchEngine(metaclass=Singleton):
         ranked_pages = self.rank_documents(query)
         outputs = []
 
+        indexer_dict = {}
+        for index in self.indexer:
+            if index.page_id not in indexer_dict:
+                indexer_dict[index.page_id] = []
+            indexer_dict[index.page_id].append(index)
+
         for page, score in ranked_pages:
             if score == 0:
                 break
 
             # extract child links from the child_link_list
             child_link_list = page.child_link_list.split("\n") if page.child_link_list else []
+            print("Child Links done")
 
             # extract parent links
             parent_link_list = self.pages.filter(child_link_list__contains=page.url).values_list('url', flat=True)
+            print("Parent Links done")
 
             # extract keywords
-            keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
-            keyword_list = sorted(keyword_list, key=lambda x: x[1], reverse=True)[:5]
+            # keyword_list = [(index.keyword_id.keyword, index.frequency) for index in self.indexer if index.page_id == page]
+            keyword_list = [(index.keyword_id.keyword, index.frequency) for index in indexer_dict.get(page, [])]
+            keyword_list = heapq.nlargest(5, keyword_list, key=lambda x: x[1])
+            print("Keywords done")
 
             # print(f"last_modification_date: {page.last_modification_date}")
             output = {
@@ -158,6 +169,8 @@ class SearchEngine(metaclass=Singleton):
                 'score': score
             }
             outputs.append(output)
+
+            print("Output done")
 
         return outputs
 
