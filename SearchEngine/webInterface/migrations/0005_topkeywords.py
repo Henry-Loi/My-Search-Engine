@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-from webInterface.spider import load_initial_data
 
 class Migration(migrations.Migration):
 
@@ -44,5 +43,4 @@ class Migration(migrations.Migration):
                 "unique_together": {("page_id", "rank")},
             },
         ),
-        migrations.RunPython(load_initial_data),
     ]
