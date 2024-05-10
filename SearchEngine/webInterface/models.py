@@ -27,15 +27,15 @@ class Indexer(models.Model):
     def __str__(self):
         return f"{self.page_id}, {self.keyword_id}, {self.frequency}"
     
-# class TopKeywords(models.Model):
-#     page_id = models.ForeignKey(Pages, on_delete=models.CASCADE)
-#     keyword_id = models.ForeignKey(Keywords, on_delete=models.CASCADE)
-#     frequency = models.IntegerField()
-#     rank = models.IntegerField()
+class TopKeywords(models.Model):
+    page_id = models.ForeignKey(Pages, on_delete=models.CASCADE)
+    keyword_id = models.ForeignKey(Keywords, on_delete=models.CASCADE)
+    frequency = models.IntegerField()
+    rank = models.IntegerField()
 
-#     class Meta:
-#         unique_together = ('page_id', 'rank')
+    class Meta:
+        unique_together = ('page_id', 'rank')
 
-#     def __str__(self):
-#         return f"{self.page_id}, {self.keyword_id}, {self.frequency}, {self.rank}"
+    def __str__(self):
+        return f"{self.page_id}, {self.keyword_id}, {self.frequency}, {self.rank}"
 
