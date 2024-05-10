@@ -8,6 +8,9 @@ Web Framework: Django
 ** please make sure you are in the "SearchEngine" folder before running the program below
 Run the follow command to SearchEngine directory: cd ./SearchEngine 
 
+*** please make sure you have install Django. Run the follow command to install:
+python -m pip install Django
+
 Spider & Indexer program (program for Database Setup):
 1. Run the following commands in terminal: 
     python manage.py migrate --fake webInterface 0005_topkeywords
